@@ -1,0 +1,31 @@
+---
+title: "Multinomial model to classify shre species"
+date: "`r Sys.Date()`"
+author: "David Simons"
+    url: https://github.com/diddrog11/rodent_trapping
+    affiliation: The Royal Veterinary College, London, UK
+    affiliation_url: https://www.rvc.ac.uk
+    orcid_id: 0000-0001-9655-1656
+output: 
+  pdf_document: default
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library("tidyverse")
+library("here")
+data = read_rds(here("data", "data_for_report.rds"))
+```
+
+# Motivation
+
+Using a multinomial machine learning approach it appeared that classification to shrew species may be possible based on simulated distributions of morphological features obtained from the literature (from Kingdon). It potentially suggested that it would be possible to classify these species based on morphological approaches only.
+
+```{r training-data, fig.cap = "Model predictions using a training and testing subset of the simulated distributions for weight, head-body length, tail length, tail/head-body ratio and hind foot length."}
+data$training_confusion
+```
+
+# Model structure
+
+
