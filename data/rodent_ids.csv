@@ -41,14 +41,14 @@ praomys_rostratus,rodent,muridae,murinae,NA,50.5,NA,31,73,NA,129.5,NA,109,147,NA
 praomys_tullbergi,rodent,muridae,murinae,NA,37.9,NA,28,54,NA,119.3,NA,108,131,NA,139.5,NA,115,153,NA,18.7,NA,17,21,NA,24.1,NA,22,26,NA,31.5,29.1,34.3,mondadjem
 rattus_rattus,rodent,muridae,murinae,NA,115.2,NA,56,257,NA,168.3,NA,100,342,NA,178.9,NA,95,250,NA,21.2,NA,16,31,NA,33.8,NA,23,42,NA,39.9,34.9,44.7,kingdon
 crocidura_buettikoferi,shrew,soricidae,crocidurinae,NA,14,NA,10,17,NA,86,NA,72,100,NA,56.5,NA,51,62,NA,8.25,NA,7,9.5,NA,13.5,NA,12,15,NA,22,21.4,22.7,kingdon
-crocidura_crossei,shrew,soricidae,crocidurinae,NA,7.2,NA,6.3,8,NA,94,NA,54,80,NA,52.5,NA,48,57,NA,6.5,NA,6,8,NA,11,NA,10,12,NA,19.2,18.5,19.9,kingdon
+crocidura_crossei,shrew,soricidae,crocidurinae,NA,7.2,NA,6.3,8,NA,67,NA,54,80,NA,52.5,NA,48,57,NA,6.5,NA,6,8,NA,11,NA,10,12,NA,19.2,18.5,19.9,kingdon
 crocidura_denti,shrew,soricidae,crocidurinae,NA,10.5,NA,8,12,NA,63,NA,63,63,NA,46,NA,46,46,NA,8,NA,8,8,NA,13,NA,13,13,NA,20.6,20.6,20.6,kingdon
 crocidura_fuscomurina,shrew,soricidae,crocidurinae,NA,3.7,NA,2,5,NA,57.9,NA,48,75,NA,38.5,NA,27.5,48,NA,7.6,NA,6.5,9,NA,9.8,NA,8,11,NA,16.2,15.1,17.4,kingdon
 crocidura_lamottei,shrew,soricidae,crocidurinae,NA,20.5,NA,18,23,NA,87.5,NA,85,90,NA,45.3,NA,35.5,55,NA,11.5,NA,11,12,NA,15,NA,14,16,NA,25.3,24.7,26,kingdon
 crocidura_muricauda,shrew,soricidae,crocidurinae,NA,4.4,NA,3,8,NA,61,NA,56,66,NA,77,NA,62,95,NA,9,NA,8.5,10,NA,12.2,NA,11.8,13,NA,18.2,17.8,18.8,kingdon
 crocidura_nimbae,shrew,soricidae,crocidurinae,NA,12.5,NA,8,19,NA,81.7,NA,75,90,NA,53,NA,50,70,NA,NA,NA,NA,NA,NA,16.5,NA,16,17,NA,26,25.5,26.5,kingdon
 crocidura_obscurior,shrew,soricidae,crocidurinae,NA,3.3,NA,2.5,4,NA,47.5,NA,45,50,NA,32.5,NA,30,35,NA,7,NA,6,8,NA,10,NA,10,10,NA,15.8,15.6,15.9,kingdon
-crocidura_olivieri,shrew,soricidae,crocidurinae,NA,50.5,NA,36,65,NA,125,NA,110,140,NA,93,NA,85,100,NA,13,NA,12,14,NA,22,NA,21,23,NA,33,32,34.3,kingdon
+crocidura_olivieri,shrew,soricidae,crocidurinae,NA,34.5,NA,31,65,NA,121,NA,110,140,NA,79.8,NA,70,100,NA,11.4,NA,9,14,NA,21,NA,18,23,NA,33,32,34.3,kingdon
 crocidura_poensis,shrew,soricidae,crocidurinae,NA,13,NA,9,17,NA,86.5,NA,75,98,NA,57,NA,48,64,NA,10,NA,9,11,NA,17,NA,15,18,NA,24.1,23.7,24.5,kingdon
 crocidura_theresae,shrew,soricidae,crocidurinae,NA,13.3,NA,7,18.4,NA,91.3,NA,78,101,NA,47.5,NA,34,55,NA,NA,NA,NA,NA,NA,14.8,NA,13,16,NA,22.8,21.3,24.4,kingdon
 suncus_megalura,shrew,soricidae,crocidurinae,NA,5.5,NA,3,8,NA,60.8,NA,50,65,NA,88.8,NA,82,97.7,NA,8.3,NA,6,10,NA,15.5,NA,14,17,NA,18,16.8,18.6,kingdon
