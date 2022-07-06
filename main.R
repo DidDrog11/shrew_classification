@@ -6,7 +6,7 @@ library(rsample)
 library(tidyverse)
 library(truncnorm)
 
-seed(123)
+set.seed(123)
 # Prepare data from literature
 
 shrew_id <- read_csv(here("data", "rodent_ids.csv")) %>%
@@ -45,7 +45,7 @@ measurements$pred_hb <- predict(hb_model, newdata = measurements)
 measurements$pred_tail <- predict(tail_model, newdata = measurements)
 measurements$pred_hf <- predict(hf_model, newdata = measurements)
 
-ggplot(measurements) +
+hb_model_plot <- ggplot(measurements) +
   geom_point(aes(x = hb, y = pred_hb, colour = species)) +
   geom_line(aes(x = hb, y = pred_hb, colour = species)) +
   labs(title = "Predicted head-body length from weight",
@@ -53,7 +53,7 @@ ggplot(measurements) +
        y = "Predicted head-body length") +
   theme_bw()
 
-ggplot(measurements) +
+tail_model_plot <- ggplot(measurements) +
   geom_point(aes(x = tail, y = pred_tail, colour = species)) +
   geom_line(aes(x = tail, y = pred_tail, colour = species)) +
   labs(title = "Predicted tail length from weight",
@@ -61,7 +61,7 @@ ggplot(measurements) +
        y = "Predicted tail length") +
   theme_bw()
 
-ggplot(measurements) +
+hf_model_plot <- ggplot(measurements) +
   geom_point(aes(x = hind_foot, y = pred_hf, colour = species)) +
   geom_line(aes(x = hind_foot, y = pred_hf, colour = species)) +
   labs(title = "Predicted hind-foot length from weight",
@@ -82,11 +82,30 @@ sim_measures <- list()
 for(i in 1:length(unique(weight$species))) {
   
   sim_measures[[i]] <- tibble(species = rep(weight$species[i], each = 5000),
-                             weight = rtruncnorm(n = 5000, mean = weight$weight_mean[i], sd = weight$weight_sd[i] * 2, a = weight$weight_min[i]*0.5, b = weight$weight_max[i]*1.5))
+                             weight = rtruncnorm(n = 5000, mean = weight$weight_mean[i], sd = weight$weight_sd[i] * 2, a = weight$weight_min[i]*0.85, b = weight$weight_max[i]*1.15))
   
-  sim_measures[[i]]$head_body <- predict(hb_model, newdata = sim_measures[[i]])
-  sim_measures[[i]]$tail <- predict(tail_model, newdata = sim_measures[[i]])
-  sim_measures[[i]]$hind_foot <- predict(hf_model, newdata = sim_measures[[i]])
+  sim_measures[[i]] <- bind_cols(sim_measures[[i]],
+                                 as.data.frame(predict(hb_model, newdata = sim_measures[[i]], se.fit = TRUE)) %>%
+                                   rename(head_body = fit,
+                                          head_body_se = se.fit) %>%
+                                   mutate(head_body_sd = head_body_se * sqrt(3)) %>%
+                                   rowwise() %>%
+                                   mutate(head_body = rnorm(1, mean = head_body, sd = head_body_sd)) %>%
+                                   select(-residual.scale, -head_body_se),
+                                 as.data.frame(predict(tail_model, newdata = sim_measures[[i]], se.fit = TRUE)) %>%
+                                   rename(tail = fit,
+                                          tail_se = se.fit) %>%
+                                   mutate(tail_sd = tail_se * sqrt(3)) %>%
+                                   rowwise() %>%
+                                   mutate(tail = rnorm(1, mean = tail, sd = tail_sd)) %>%
+                                   select(-residual.scale, -tail_se),
+                                 as.data.frame(predict(hf_model, newdata = sim_measures[[i]], se.fit = TRUE)) %>%
+                                   rename(hind_foot = fit,
+                                          hind_foot_se = se.fit) %>%
+                                   mutate(hind_foot_sd = hind_foot_se * sqrt(3)) %>%
+                                   rowwise() %>%
+                                   mutate(hind_foot = rnorm(1, mean = hind_foot, sd = hind_foot_sd)) %>%
+                                   select(-residual.scale, -hind_foot_se))
   sim_measures[[i]]$hb_tail_ratio <- sim_measures[[i]]$tail/sim_measures[[i]]$head_body
   
 }
@@ -104,32 +123,40 @@ train_data <- training(split_data)
 test_data <- testing(split_data)
 
 crocidurae_multinom_model_m1 <- multinom(species ~ weight + head_body + tail + hind_foot, data = train_data,
-                                         maxit = 200)
+                                         maxit = 300)
 
 crocidurae_multinom_model_m2 <- multinom(species ~ weight + head_body + tail + hb_tail_ratio + hind_foot, data = train_data,
-                                         maxit = 200)
+                                         maxit = 300)
+
+crocidurae_multinom_model_m3 <- multinom(species ~ weight + head_body + tail, data = train_data,
+                                         maxit = 300)
+
 
 # As sensitivity analysis we will limit to the shrew species that have been detected in the region
 sens_1 <- simulated_morphology %>%
   filter(species %in% c("crocidura_buettikoferi", "crocidura_theresae", "crocidura_grandiceps", "crocidura_olivieri"))
+sens_1$species <- droplevels(relevel(sens_1$species, ref = "crocidura_olivieri"))
 
 split_data_s1 <- initial_split(sens_1, prop = 0.7, strata = "species")
 train_data_s1 <- training(split_data_s1)
 test_data_s1 <- testing(split_data_s1)
 
 crocidurae_multinom_model_s1 <- multinom(species ~ weight + head_body + tail + hind_foot, data = train_data_s1,
-                                         maxit = 200)
+                                         maxit = 300)
 
 # Check the accuracy of these models on withheld test data
 
 test_data$m1_pred <-  predict(crocidurae_multinom_model_m1, newdata = test_data, response = "class")
 test_data$m2_pred <-  predict(crocidurae_multinom_model_m2, newdata = test_data, response = "class")
+test_data$m3_pred <-  predict(crocidurae_multinom_model_m3, newdata = test_data, response = "class")
 test_data_s1$s1_pred <-  predict(crocidurae_multinom_model_s1, newdata = test_data_s1, response = "class")
 
 tab_m1 <- table(test_data$species, test_data$m1_pred)
 m1_accuracy <- round((sum(diag(tab_m1))/sum(tab_m1)) * 100, 2)
 tab_m2 <- table(test_data$species, test_data$m2_pred)
 m2_accuracy <- round((sum(diag(tab_m2))/sum(tab_m2)) * 100, 2)
+tab_m3 <- table(test_data$species, test_data$m3_pred)
+m3_accuracy <- round((sum(diag(tab_m3))/sum(tab_m3)) * 100, 2)
 
 tab_s1 <- test_data_s1 %>%
   mutate(species = as.character(species),
@@ -189,6 +216,8 @@ bnitm_data <- bind_cols(bnitm_data, probabilities)
 
 correct_classification <- bnitm_data %>%
   filter(species == species_predicted)
+sens_correct_classification <- sensitivity %>%
+  filter(species == s1_pred)
 
 bnitm_crocidura_confusion <- bnitm_data %>%
   group_by(species, species_predicted) %>%
@@ -207,37 +236,40 @@ bnitm_confusion_matrix <- ggplot(bnitm_crocidura_confusion) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   labs(title = "Crocidura")
 
-# Only 5 individuals have been correctly classified
+# Only 16 individuals have been correctly classified
 
 weight_plot <- simulated_morphology %>%
   ggplot() +
   geom_freqpoly(aes(x = weight)) +
-  geom_point(data = bnitm_data, aes(x = weight, y = 0.1), colour = "red") +
+  geom_point(data = bnitm_data, aes(x = weight, y = 0.1, colour = species_predicted), size = 2) +
   facet_wrap(~ species, ncol = 2) +
   labs(title = "Shrew weight")
 
 hb_plot <- simulated_morphology %>%
   ggplot() +
   geom_freqpoly(aes(x = head_body)) +
-  geom_point(data = bnitm_data, aes(x = head_body, y = 0.1), colour = "red") +
+  geom_point(data = bnitm_data, aes(x = head_body, y = 0.1, colour = species_predicted), size = 2) +
   facet_wrap(~ species, ncol = 2) +
   labs(title = "Shrew head-body")
 
 tail_plot <- simulated_morphology %>%
   ggplot() +
   geom_freqpoly(aes(x = tail)) +
-  geom_point(data = bnitm_data, aes(x = tail, y = 1), colour = "red") +
+  geom_point(data = bnitm_data, aes(x = tail, y = 1, colour = species_predicted), size = 2) +
   facet_wrap(~ species, ncol = 2) +
   labs(title = "Shrew tail")
 
 hf_plot <- simulated_morphology %>%
   ggplot() +
   geom_freqpoly(aes(x = hind_foot)) +
-  geom_point(data = bnitm_data, aes(x = hind_foot, y = 1), colour = "red") +
+  geom_point(data = bnitm_data, aes(x = hind_foot, y = 1, colour = species_predicted), size = 2) +
   facet_wrap(~ species, ncol = 2) +
   labs(title = "Shrew hind foot")
 
-report_input <- list(model = crocidurae_multinom_model_m1,
+report_input <- list(morphology_plots = list(hb_model_plot,
+                                             tail_model_plot,
+                                             hf_model_plot),
+                     model = crocidurae_multinom_model_m1,
                      training_data = simulated_morphology,
                      training_confusion = crocidura_confusion_matrix,
                      bnitm_data = bnitm_data,

@@ -2,30 +2,168 @@
 title: "Multinomial model to classify shre species"
 date: "`r Sys.Date()`"
 author: "David Simons"
-    url: https://github.com/diddrog11/rodent_trapping
-    affiliation: The Royal Veterinary College, London, UK
-    affiliation_url: https://www.rvc.ac.uk
-    orcid_id: 0000-0001-9655-1656
 output: 
   pdf_document: default
 always_allow_html: yes
 ---
 
-```{r setup, include=FALSE, echo=F}
+```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library("tidyverse")
 library("here")
+library("cowplot")
+library("caret")
 data = read_rds(here("data", "data_for_report.rds"))
 ```
 
 # Motivation
 
-Using a multinomial machine learning approach it appeared that classification to shrew species may be possible based on simulated distributions of morphological features obtained from the literature (from Kingdon). It potentially suggested that it would be possible to classify these species based on morphological approaches only.
+Using a multinomial machine learning approach it appeared that classification to shrew species may be possible based on simulated distributions of morphological features obtained from the literature (primarily Kingdon). It potentially suggested that it would be possible to classify these species based on morphological approaches only, reducing the need for molecular classification.
 
 ```{r training-data, fig.cap = "Model predictions using a training and testing subset of the simulated distributions for weight, head-body length, tail length, tail/head-body ratio and hind foot length."}
 data$training_confusion
 ```
 
-# Model structure
+# Methods
 
+## Training data
 
+Measurements of shrew weights, head-body lengths, tail lengths, hind foot lengths and ear lengths were obtained from the literature. Where available means, minimums and maximums for each metric were extracted. Where means were not available the midpoint of the minimum and maximum value were used, for species where sex disaggregated values were provided weighted averages were used to calculate the species means. Standard deviations were estimated using the minimum and maximum values (SD = (max - min)/4).
+
+To produce a sufficient number of records to train the multinomial model records were simulated from these values. The weight of a shrew species was assumed to follow a normal distribution with the midpoint matching the literature reported mean and 95% of values falling within two standard deviations of the mean. A truncated normal distribution was used to simulate the weights of 5,000 individuals of each species with the lower bound set at 85% of the literature reported minimum and the upper bound set at 115% of the literature reported maximum.
+
+It was expected that there is a strong correlation between an individual shrews weight and other morphological parameters including head-body length, tail length and hind-foot length. To account for this a Generalised Linear Model was produced for each of these parameters (i.e. head-body length \~ weight \* species). These models were used to predict these morphological parameters based on the simulated weights of each individual using the predicted value and standard deviation. Reasonable concordance between literature reported values and model derived values were produced for each species.
+
+```{r models-for-sim}
+
+a <- data$morphology_plots[[1]] +
+  theme(legend.position="none") +
+  labs(title = NULL)
+b <- data$morphology_plots[[2]] +
+  theme(legend.position="none") +
+  labs(title = NULL)
+c <- data$morphology_plots[[3]] +
+  theme(legend.position="none") +
+  labs(title = NULL)
+legend <- get_legend(data$morphology_plots[[1]] +
+                       labs(colour = "Species") +
+                       guides(colour = guide_legend(ncol = 2)))
+plot_grid(a, b, c, legend,
+          nrow = 2,
+          rel_heights = c(a = 1, b = 1, c = 1, legend = 0.5))
+
+```
+
+The morphological parameters in the simulated dataset are shown below.
+
+```{r simulated-morphology}
+
+plot_grid(data$training_data %>%
+            ggplot() +
+            geom_point(aes(x = weight, y = head_body, colour = species)) +
+            labs(x = "Weight",
+                 y = "Head-body length") +
+            theme_bw() +
+            theme(legend.position="none"),
+          data$training_data %>%
+            ggplot() +
+            geom_point(aes(x = weight, y = tail, colour = species)) +
+            labs(x = "Weight",
+                 y = "Tail length") +
+            theme_bw() +
+            theme(legend.position="none"),
+          data$training_data %>%
+            ggplot() +
+            geom_point(aes(x = weight, y = hind_foot, colour = species)) +
+            labs(x = "Weight",
+                 y = "Hind foot length") +
+            theme_bw() +
+            theme(legend.position="none"),
+          get_legend(data$training_data %>%
+                       ggplot() +
+                       geom_point(aes(x = weight, y = head_body, colour = species)) +
+                       labs(x = "Weight",
+                            y = "Head-body length",
+                            colour = "Species") +
+                       theme_bw() +
+                       guides(colour = guide_legend(ncol = 2))),
+          nrow = 2,
+          rel_heights = c(1, 1, 1, 0.5))
+
+```
+
+These data are used to train the Multinomial Log-linear model via a neural network. The formula is of the structure:
+
+```{=tex}
+\begin{equation} 
+  multinom(\text{Species} \sim \text{Weight} + \text{Head-body length} + \text{Tail length} + \text{Hind foot length})
+\end{equation}
+```
+
+The accuracy of this model on the 30% of withheld simulated data is 91.1%. The variable importance for the model, produced using the `VarImp` function is:
+
+```{r variable-importance}
+
+varImp(data$model)
+
+```
+This suggests that classification is primarily based on weight with a lower contribution from hind foot length, tail length and head-body length.
+
+# Results
+
+## Out of sample predictions
+
+To assess the ability of the model to classify observed - out of sample - data, 41 records of shrews that have been sequenced with their morphological measurements were used. 16 of the 41 records were correctly attributed to their species (40%). The model correctly classified 6 *Crocidura buettikoferi* (86%), 8 *Crocidura olivieri* (67%), and 2 *Crocidura theresae* (17%). No *Crocidura grandiceps* were successfully classified with the majority of these being incorrectly classified as *Crocidura buettikoferi* (70%). Similarly, for *Crocidura theresea* the majority of individuals were misclassified as *Crocidura buettikoferi* (75%). The confusion matrix for these out of sample records are shown below.
+
+```{r bnitm-confusion}
+
+data$bnitm_confusion_matrix +
+  labs(x = "Species",
+       y = "Species predicted",
+       fill = "Proportion")
+
+```
+
+## Sensitivity analysis
+
+In sensitivity analysis, restricting the model training data to species identified in the out of sample dataset there was minimal improvement in correct classification (17 compared to 16) with a single previously incorrectly classified *Crocidura buettikoferi* correctly classified.
+
+# Discussion
+
+The expected ability to classify shrews based on their morphology was not found when using out of sample data. There are several potential reasons for this.
+
+First, the literature had limited number of measurements for each species (<  20 individuals), this necessitated the simulated approach which may not be suitable if the measurements obtained are not truly reflective of the true distribution of measurements in natural populations of these species.
+
+Second, there is some evidence that shrew morphology differs across their ranges which may be important if the measurements came from specific sub-populations not representative of the true morphology.
+
+To explore this further the below graphs show the where the out of sample measurements fall within the simulated morphology for each species with the points colour coded to the classification produced by the model. 
+
+```{r exploring-limitations}
+
+data$plots[[1]] +
+  theme_bw() +
+  labs(y = NULL,
+       x = "Weight",
+       colour = "Predicted species")
+
+data$plots[[2]] +
+  theme_bw() +
+  labs(y = NULL,
+       x = "Head-body length",
+       colour = "Predicted species")
+
+data$plots[[3]] +
+  theme_bw() +
+  labs(y = NULL,
+       x = "Tail length",
+       colour = "Predicted species")
+
+data$plots[[4]] +
+  theme_bw() +
+  labs(y = NULL,
+       x = "Hind foot length",
+       colour = "Predicted species")
+
+```
+
+For the weights, most individuals fall within the simulated values, however for *Crocidura grandiceps* observed weights possibly fall below the simulated values. Head-body lengths for observed *Crocidura olivieri* and *Crocidura theresae* generally fall within the simulated values however, for *Crocidura buettikoferi* and *Crocidura grandiceps* the simulated distributions do not align well with the observed values. Tail length is generally well matched between observed and simulated data, perhaps less well for *Crocidura theresae* and a single *Crocidura olivieri* which has a particularly long tail. Hind foot is perhaps the least well matched particularly for *Crocidura grandiceps* and *Crocidura olivieri*.
