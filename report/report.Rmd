@@ -1,5 +1,5 @@
 ---
-title: "Multinomial model to classify shre species"
+title: "Multinomial model to classify shrew species"
 date: "`r Sys.Date()`"
 author: "David Simons"
 output: 
@@ -136,7 +136,9 @@ First, the literature had limited number of measurements for each species (<  20
 
 Second, there is some evidence that shrew morphology differs across their ranges which may be important if the measurements came from specific sub-populations not representative of the true morphology.
 
-To explore this further the below graphs show the where the out of sample measurements fall within the simulated morphology for each species with the points colour coded to the classification produced by the model. 
+To explore where the model may be falling down I have looked at where the observed values fall within the simulated values for each metric. For the weights, most individuals fall within the simulated values, however for *Crocidura grandiceps* observed weights possibly fall below the simulated values. Head-body lengths for observed *Crocidura olivieri* and *Crocidura theresae* generally fall within the simulated values however, for *Crocidura buettikoferi* and *Crocidura grandiceps* the simulated distributions do not align well with the observed values. Tail length is generally well matched between observed and simulated data, perhaps less well for *Crocidura theresae* and a single *Crocidura olivieri* which has a particularly long tail. Hind foot is perhaps the least well matched particularly for *Crocidura grandiceps* and *Crocidura olivieri*.
+
+The below graphs show the where the out of sample measurements fall within the simulated morphology for each species with the points colour coded to the classification produced by the model. 
 
 ```{r exploring-limitations}
 
@@ -165,5 +167,3 @@ data$plots[[4]] +
        colour = "Predicted species")
 
 ```
-
-For the weights, most individuals fall within the simulated values, however for *Crocidura grandiceps* observed weights possibly fall below the simulated values. Head-body lengths for observed *Crocidura olivieri* and *Crocidura theresae* generally fall within the simulated values however, for *Crocidura buettikoferi* and *Crocidura grandiceps* the simulated distributions do not align well with the observed values. Tail length is generally well matched between observed and simulated data, perhaps less well for *Crocidura theresae* and a single *Crocidura olivieri* which has a particularly long tail. Hind foot is perhaps the least well matched particularly for *Crocidura grandiceps* and *Crocidura olivieri*.
